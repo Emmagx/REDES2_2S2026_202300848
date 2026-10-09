@@ -33,6 +33,7 @@ Se dividirá la red `/24` utilizando máscaras `/26` para dejar espacio a los en
     *   Rango útil: `172.16.18.65` - `172.16.18.126`
     *   Broadcast: `172.16.18.127`
 *   *Reserva para enlaces internos (OSPF):* A partir de `172.16.18.128/26`, segmentado en redes `/30` (ej. 172.16.18.128/30, 172.16.18.132/30, etc.).
+    *   **Nota para Servidor DNS/HTTP (T1R5 G0/2):** Se recomienda usar la subred `172.16.18.128/30`. Asignar la IP `.129` a la interfaz `G0/2` de T1R5, y la `.130` al Servidor.
 
 ---
 
