@@ -1,0 +1,13 @@
+# Script: T1S4-AC
+
+```text
+enable
+configure terminal
+hostname T1S4-AC
+interface range f0/1-2
+ channel-group 1 mode passive
+ exit
+interface port-channel 1
+ switchport mode trunk
+ exit
+```
