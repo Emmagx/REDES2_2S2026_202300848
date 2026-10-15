@@ -26,11 +26,9 @@ router eigrp 10
  exit
 ```
 
-## ACL aplicada en este router
+## ACL
 
-```text
-! ACL_SOPORTE_IN -> aplicada en g0/1 in (ver scripts/ACLs/ACL_SOPORTE.md)
-interface g0/1
- ip access-group ACL_SOPORTE_IN in
- exit
-```
+**Sin ACL (decisión de diseño).** La regla de Soporte es *"habla y escucha a todos los departamentos"*,
+así que su interfaz LAN se deja libre. La restricción "nadie entra a Seguridad" (que también aplica a
+Soporte) se resuelve en el destino con `SEC_OUT` en `CF-R3`. Ver
+[`../ACLs/ACL_SOPORTE.md`](../ACLs/ACL_SOPORTE.md).

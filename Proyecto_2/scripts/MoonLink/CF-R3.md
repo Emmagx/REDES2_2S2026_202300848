@@ -29,8 +29,10 @@ router eigrp 10
 ## ACL aplicada en este router
 
 ```text
-! ACL_SEGURIDAD_IN -> aplicada en g0/1 in (ver scripts/ACLs/ACL_SEGURIDAD.md)
+! SEC_OUT -> aplicada en g0/1 OUT (es una ACL de retorno: protege la entrada a Seguridad)
+! El bloqueo de "cualquier depto -> Seguridad" se resuelve AQUI, en el destino.
+! Ver ../ACLs/ACL_SEGURIDAD.md
 interface g0/1
- ip access-group ACL_SEGURIDAD_IN in
+ ip access-group SEC_OUT out
  exit
 ```

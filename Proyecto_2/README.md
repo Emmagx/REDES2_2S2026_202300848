@@ -225,12 +225,17 @@ garantizando el paso de los servicios críticos (DHCP, DNS, HTTP y HTTPS) y del 
 
 | ACL | Departamento | Equipo | Interfaz | Sentido |
 | :--- | :--- | :--- | :--- | :--- |
-| `ACL_ADMIN_IN` | Administración | T1R4 | `g0/1` | in |
-| `ACL_ATC_IN` | Atención al Cliente | T1R5 | `g0/1` | in |
-| `ACL_VENTAS_IN` | Ventas | RN-R3 y RN-R4 | `g0/1` | in |
-| `ACL_FACTURACION_IN` | Facturación | RN-R3 y RN-R4 | `g0/2` | in |
-| `ACL_SOPORTE_IN` | Soporte | CF-R2 | `g0/1` | in |
-| `ACL_SEGURIDAD_IN` | Seguridad | CF-R3 | `g0/1` | in |
+| `ATC_IN` | Atención al Cliente | T1R5 | `g0/1` | in |
+| `VENTAS_IN` | Ventas | RN-R3 y RN-R4 | `g0/1` | in |
+| `FAC_IN` | Facturación | RN-R3 y RN-R4 | `g0/2` | in |
+| `SEC_OUT` | Seguridad | CF-R3 | `g0/1` | **out** |
+| *(ninguna)* | Administración | T1R4 | — | — |
+| *(ninguna)* | Soporte | CF-R2 | — | — |
+
+> **Administración y Soporte no llevan ACL por diseño:** su regla es "hablar y escuchar a todos", así
+> que las restricciones se aplican en el **origen** de los departamentos que sí las necesitan. La
+> restricción "nadie entra a Seguridad" se resuelve en el destino con `SEC_OUT` (sentido `out`), que
+> solo permite tráfico de retorno.
 
 - 📄 **Justificación completa de interfaz y sentido (requisito 4.2):** [`scripts/ACLs/README.md`](scripts/ACLs/README.md)
 - 📄 **Configuración de cada ACL:** [`scripts/ACLs/`](scripts/ACLs/)

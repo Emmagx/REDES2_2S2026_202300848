@@ -1,64 +1,77 @@
-# ACL — Seguridad
+# ACL: `SEC_OUT` — Seguridad
 
 > **ISP 3 — MoonLink** · Departamento **Seguridad** (`172.16.32.64/26`)
-> Equipo: `CF-R3` · Interfaz: **`g0/1`** · Sentido: **`in`**
+> Equipo: `CF-R3` · Interfaz: **`g0/1`** · Sentido: **`out`** ⚠️ *(la única ACL del proyecto aplicada en `out`)*
 
-## Reglas que aplica este ACL
+## Reglas que aplica
 
-| Regla del enunciado (4.2) | Resultado |
+| Regla del enunciado | Resultado |
 | :--- | :--- |
 | Seguridad → Cualquier depto (ICMP, TCP/80, TCP/443) | ✅ Seguridad inicia, Exitoso |
 | Cualquier depto → Seguridad | 🚫 Bloqueado |
 
-## Configuración
+## Configuración corregida
 
 ```text
-ip access-list extended ACL_SEGURIDAD_IN
-
- ! --- Plano de control y servicios compartidos: NO filtrar ---
- permit ospf any any
- permit eigrp any any
- permit udp any any eq 1985
- permit udp any any eq 67
- permit udp any any eq 68
- permit udp any any eq 53
- permit tcp any any eq 53
-
- ! --- Regla: Seguridad INICIA hacia cualquier departamento (ICMP, HTTP, HTTPS) ---
- permit icmp 172.16.32.64 0.0.0.63 any
- permit tcp  172.16.32.64 0.0.0.63 any eq 80
- permit tcp  172.16.32.64 0.0.0.63 any eq 443
-
- ! --- El trafico entrante NO se permite aqui: lo bloquean las ACLs de cada origen ---
- ! (ver MATRIZ_PRUEBAS.md). Este ACL solo acota lo que Seguridad puede iniciar.
+enable
+configure terminal
+no ip access-list extended SEC_OUT
+ip access-list extended SEC_OUT
+ permit udp any any eq bootpc
+ permit udp any any eq bootps
+ permit udp host 192.168.48.50 eq domain any
+ permit tcp any any established
+ permit icmp any any echo-reply
+ deny ip any any
  exit
-```
-
-## Aplicación en la interfaz
-
-```text
 interface g0/1
- ip access-group ACL_SEGURIDAD_IN in
+ ip access-group SEC_OUT out
  exit
+exit
+write memory
 ```
 
-## Justificación del sentido `in`
+## Línea por línea
 
-Este ACL **no** intenta bloquear el tráfico entrante a Seguridad: un ACL `in` sobre la interfaz LAN
-solo inspecciona los paquetes que **salen de** los hosts de Seguridad. El bloqueo de "cualquier
-departamento → Seguridad" se implementa de forma distribuida, en la ACL **de cada departamento de
-origen** (filtrado en origen). Así se evita el problema clásico de ACLs sin estado, donde bloquear
-el tráfico entrante en el destino también bloquearía las **respuestas** a las conexiones que
-Seguridad sí inicia.
+| Línea | Qué hace |
+| :--- | :--- |
+| `bootpc` / `bootps` | Permite que el **DHCP Offer/Ack** llegue a los hosts de Seguridad |
+| `udp host 192.168.48.50 eq domain any` | Respuestas DNS del servidor (puerto origen 53). ⚠️ **IP corregida** |
+| `tcp any any established` | Retorno de las sesiones HTTP/HTTPS que **Seguridad inicia** |
+| `icmp any any echo-reply` | Respuestas a los ping que **Seguridad inicia** |
+| `deny ip any any` | Bloquea todo lo que intente **entrar** a Seguridad (incluye `icmp echo`) |
 
-> **Nota de diseño (defensa en profundidad):** este ACL acota a Seguridad a los protocolos que el
-> enunciado le autoriza (ICMP, HTTP, HTTPS, DNS y DHCP). Si se quisiera ser aún más estricto, se
-> podría aplicar adicionalmente un ACL `out` sobre la misma interfaz LAN que deniegue únicamente
-> `icmp ... echo` proveniente de los demás departamentos.
+## Por qué esta ACL va en sentido `out` y no `in`
+
+Un ACL extendido **no mantiene estado**. Si se aplicara un ACL `in` sobre la interfaz LAN de Seguridad
+para bloquear la entrada, se bloquearían también **las respuestas** a las conexiones que Seguridad sí
+tiene permitido iniciar, rompiendo la regla *"Seguridad → cualquiera: Exitoso"*.
+
+Con `SEC_OUT` en sentido **`out`** (tráfico que **sale del router hacia** los hosts de Seguridad):
+
+- Un `icmp echo` (ping) enviado por otro departamento hacia Seguridad → no coincide con ninguna línea
+  → cae en `deny ip any any` → **bloqueado** ✅ *(regla: nadie entra a Seguridad)*
+- Un `icmp echo-reply` (respuesta al ping que Seguridad inició) → coincide con la línea 50 → **pasa** ✅
+- El tráfico **originado por** Seguridad no se filtra aquí (sale por la interfaz en sentido `in`, que
+  no tiene ACL) → Seguridad puede hablar con quien quiera ✅
+
+El bloqueo de "cualquier departamento → Seguridad" **no** se implementa en las ACLs de los otros
+departamentos (no tienen permiso hacia `172.16.32.64/26`, así que además hay filtrado en el origen,
+lo que constituye defensa en profundidad).
 
 ## Verificación
 
 ```text
-show ip access-lists ACL_SEGURIDAD_IN
-show ip interface g0/1 | include access group
+show ip access-lists SEC_OUT
+show ip interface g0/1        ! debe decir: ip access-group SEC_OUT out
+```
+
+Prueba funcional:
+
+```text
+! Desde una PC de Soporte hacia una de Seguridad
+ping 172.16.32.66        -> Debe FALLAR
+
+! Desde una PC de Seguridad hacia una de Soporte
+ping 172.16.32.2         -> Debe FUNCIONAR
 ```

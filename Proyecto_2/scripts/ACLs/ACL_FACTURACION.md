@@ -1,84 +1,76 @@
-# ACL — Facturación
+# ACL: `FAC_IN` — Facturación
 
 > **ISP 2 — AndinaCom** · Departamento **Facturación** (`172.16.28.64/26`, VIP HSRP `172.16.28.65`)
-> Equipos: `RN-R3` y `RN-R4` · Interfaz: **`g0/2`** · Sentido: **`in`** (en **ambos** routers)
+> Equipos: `RN-R3` **y** `RN-R4` · Interfaz: **`g0/2`** · Sentido: **`in`**
 
-## Reglas que aplica este ACL
+## Reglas que aplica
 
-| Regla del enunciado (4.2) | Resultado |
+| Regla del enunciado | Resultado |
 | :--- | :--- |
-| Facturación ↔ Ventas (ICMP, TCP/80) | ✅ Bidireccional, Exitoso |
+| Facturación ↔ Ventas (ICMP, TCP/80) | ✅ Exitoso |
 | Facturación → Atención al Cliente | 🚫 Bloqueado |
 | Cualquier depto → Seguridad | 🚫 Bloqueado |
 
-## Configuración
+## Configuración corregida
 
 ```text
-ip access-list extended ACL_FACTURACION_IN
-
- ! --- Plano de control y servicios compartidos: NO filtrar ---
+enable
+configure terminal
+no ip access-list extended FAC_IN
+ip access-list extended FAC_IN
  permit ospf any any
- permit eigrp any any
  permit udp any any eq 1985
- permit udp any any eq 67
- permit udp any any eq 68
- permit udp any any eq 53
- permit tcp any any eq 53
- permit tcp any host 192.168.48.50 eq 80
- permit tcp any host 192.168.48.50 eq 443
-
- ! --- Regla: Facturacion -> Atencion al Cliente BLOQUEADO ---
- deny   ip 172.16.28.64 0.0.0.63 172.16.18.128 0.0.0.127
-
- ! --- Regla: ningun departamento INICIA hacia Seguridad ---
- permit icmp 172.16.28.64 0.0.0.63 172.16.32.64 0.0.0.63 echo-reply
- permit tcp  172.16.28.64 0.0.0.63 eq 80  172.16.32.64 0.0.0.63
- permit tcp  172.16.28.64 0.0.0.63 eq 443 172.16.32.64 0.0.0.63
- deny   ip   172.16.28.64 0.0.0.63 172.16.32.64 0.0.0.63
-
- ! --- Regla: Facturacion <-> Ventas (ICMP, TCP/80) ---
- permit icmp 172.16.28.64 0.0.0.63 172.16.28.0 0.0.0.63
- permit tcp  172.16.28.64 0.0.0.63 172.16.28.0 0.0.0.63 eq 80
- permit icmp 172.16.28.0 0.0.0.63 172.16.28.64 0.0.0.63
- permit tcp  172.16.28.0 0.0.0.63 172.16.28.64 0.0.0.63 eq 80
-
- ! --- Excepciones "VIP": Soporte y Administracion hablan con todos ---
- permit icmp 172.16.28.64 0.0.0.63 172.16.32.0 0.0.0.63
- permit tcp  172.16.28.64 0.0.0.63 172.16.32.0 0.0.0.63 eq 80
- permit tcp  172.16.28.64 0.0.0.63 172.16.32.0 0.0.0.63 eq 443
- permit icmp 172.16.32.0 0.0.0.63 172.16.28.64 0.0.0.63
- permit tcp  172.16.32.0 0.0.0.63 172.16.28.64 0.0.0.63 eq 80
- permit tcp  172.16.32.0 0.0.0.63 172.16.28.64 0.0.0.63 eq 443
- permit icmp 172.16.28.64 0.0.0.63 172.16.18.0 0.0.0.127
- permit tcp  172.16.28.64 0.0.0.63 172.16.18.0 0.0.0.127 eq 80
- permit tcp  172.16.28.64 0.0.0.63 172.16.18.0 0.0.0.127 eq 443
- permit icmp 172.16.18.0 0.0.0.127 172.16.28.64 0.0.0.63
- permit tcp  172.16.18.0 0.0.0.127 172.16.28.64 0.0.0.63 eq 80
- permit tcp  172.16.18.0 0.0.0.127 172.16.28.64 0.0.0.63 eq 443
-
- ! --- Deny implicito: deny ip any any ---
+ permit udp any any eq 2029
+ permit udp any any eq bootpc
+ permit udp any any eq bootps
+ permit ip any 192.168.48.48 0.0.0.3
+ permit tcp any any established
+ permit icmp any any echo-reply
+ permit ip any 172.16.28.0 0.0.0.63
+ permit ip any 172.16.32.0 0.0.0.63
+ permit ip any 172.16.18.0 0.0.0.127
+ deny ip any any
  exit
+interface g0/2
+ ip access-group FAC_IN in
+ exit
+exit
+write memory
 ```
 
-## Aplicación en la interfaz (en los DOS routers HSRP)
+## Línea por línea
+
+| Línea | Qué hace |
+| :--- | :--- |
+| `ospf` + `1985` + `2029` | Plano de control OSPF y HSRP |
+| `bootpc` / `bootps` | DHCP relayado al servidor central |
+| `ip any 192.168.48.48 0.0.0.3` | **Servidor DNS/HTTP/HTTPS** completo: DNS, HTTP, HTTPS **e ICMP** |
+| `tcp any any established` + `icmp echo-reply` | Retorno de sesiones iniciadas desde fuera |
+| `ip any 172.16.28.0 0.0.0.63` | Facturación ↔ **Ventas** |
+| `ip any 172.16.32.0 0.0.0.63` | Facturación ↔ **Soporte** |
+| `ip any 172.16.18.0 0.0.0.127` | Facturación ↔ **Administración** (wildcard corregido) |
+| `deny ip any any` | **Atención al Cliente y Seguridad quedan bloqueados** ⚠️ |
+
+> ⚠️ **No agregues `permit ip any 172.16.18.128 0.0.0.127` (ATC) ni `172.16.32.64/26` (Seguridad)
+> a esta ACL.** La tabla del enunciado exige que **Facturación → Atención al Cliente esté bloqueado**;
+> agregar ese permiso rompería la regla y costaría puntos en la rúbrica 2.5.
+
+## Aplicación en los DOS routers HSRP
 
 ```text
 ! RN-R3 y RN-R4
 interface g0/2
- ip access-group ACL_FACTURACION_IN in
+ ip access-group FAC_IN in
  exit
 ```
 
-## Justificación del sentido `in`
-
-Mismo razonamiento que `ACL_VENTAS_IN`: filtrado **en el origen** sobre la interfaz LAN y
-**replicado en ambos routers HSRP** para que la política sobreviva a la conmutación de gateway.
-El `deny` hacia Atención al Cliente se coloca en las primeras posiciones porque las ACL son
-secuenciales (primera coincidencia gana).
+La ACL se replica en ambos routers para que la política sobreviva a la conmutación de HSRP: el
+*gateway* activo puede cambiar tras un fallo y, si la ACL estuviera en un solo equipo, la red quedaría
+sin filtrado.
 
 ## Verificación
 
 ```text
-show ip access-lists ACL_FACTURACION_IN
+show ip access-lists FAC_IN
 show standby brief
 ```

@@ -38,13 +38,13 @@ router ospf 1
 ## ACLs aplicadas en este router
 
 ```text
-! ACL_VENTAS_IN -> aplicada en g0/1 in
-! ACL_FACTURACION_IN -> aplicada en g0/2 in
-! (ver scripts/ACLs/ACL_VENTAS.md y ACL_FACTURACION.md)
+! VENTAS_IN -> aplicada en g0/1 in
+! FAC_IN -> aplicada en g0/2 in
+! (ver ../ACLs/ACL_VENTAS.md y ACL_FACTURACION.md)
 interface g0/1
- ip access-group ACL_VENTAS_IN in
+ ip access-group VENTAS_IN in
  exit
 interface g0/2
- ip access-group ACL_FACTURACION_IN in
+ ip access-group FAC_IN in
  exit
 ```

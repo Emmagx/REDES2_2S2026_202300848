@@ -23,25 +23,43 @@ Además hay 4 huecos que la rúbrica oficial ahora sí califica y hoy no están 
 
 ---
 
-## 0.1 Estado de aplicación (14/10/2026)
+## 0.1 Estado de aplicación
 
-| Cambio | Estado | Dónde quedó |
+### Cerrado ✅
+
+| Cambio | Dónde quedó |
+| :--- | :--- |
+| Renombrado de ISPs en la documentación y carpetas | `README.md`, `guia_presentacion.md`, `scripts/**`, `notas` |
+| Renombrado de los 3 switches de borde en el `.pkt` (`FibraNet GT`, `AndinaCom`, `MoonLink`) | `Proyecto2_202300848.pkt` |
+| Re-subneteo de FibraNet GT a `/25` (documentación, scripts y `.pkt`) | `README.md` §2, `scripts/FibraNet_GT/*`, `.pkt` |
+| Re-subneteo de los enlaces internos a `192.168.48.0/16` | `scripts/**` y `.pkt` |
+| Servidor DNS/HTTP/HTTPS movido a `192.168.48.50` + registro A del dominio | `.pkt` (SERVER DNS HTTP HTTPS) |
+| Pools DHCP con las máscaras `/25` y el DNS nuevo | `.pkt` (SERVER-DHCP) |
+| HTTP **y** HTTPS habilitados en el servidor | `.pkt` |
+| ACLs corregidas (servidor `192.168.48.48/30`, wildcards `/25`, `VENTAS_IN` ↔ ATC) | `scripts/ACLs/*`, `.pkt` |
+| Árbol OSPF completo de FibraNet GT (T1R1 ↔ T1R3 restablecido) | `.pkt` |
+| ACLs documentadas + justificación interfaz/sentido + matriz de pruebas | `scripts/ACLs/` |
+| Guion del análisis en modo simulación (rúbrica 1.4) | `guia_presentacion.md` §3 |
+| Kit de Wireshark (script + plantilla de análisis + instrucciones de VM) | `Wireshark/` |
+
+### Pendiente ⬜
+
+| Pendiente | Tipo | Dónde |
 | :--- | :--- | :--- |
-| Renombrado de ISPs en la documentación y carpetas | ✅ **hecho** | `README.md`, `guia_presentacion.md`, `scripts/**`, `notas` |
-| Renombrado de los 3 switches de borde dentro del `.pkt` | ⬜ pendiente (manual en PT) | [`PACKET_TRACER_CAMBIOS.md`](PACKET_TRACER_CAMBIOS.md) §A |
-| Re-subneteo de FibraNet GT a `/25` en la documentación y scripts | ✅ **hecho** | `README.md` §2, `scripts/FibraNet_GT/*`, `scripts/BGP/Multicapa_FibraNet_GT.md` |
-| Re-subneteo de FibraNet GT a `/25` dentro del `.pkt` | ⬜ pendiente (manual en PT) | [`PACKET_TRACER_CAMBIOS.md`](PACKET_TRACER_CAMBIOS.md) §B |
-| ACLs documentadas + justificación interfaz/sentido + matriz de pruebas | ✅ **hecho** | `scripts/ACLs/` |
-| ACLs aplicadas/verificadas dentro del `.pkt` | ⬜ pendiente (manual en PT) | [`PACKET_TRACER_CAMBIOS.md`](PACKET_TRACER_CAMBIOS.md) §E |
-| `no auto-summary` documentado en los 6 equipos de MoonLink | ✅ **hecho** | `scripts/MoonLink/*`, `scripts/BGP/Multicapa_MoonLink.md` |
-| Guion del análisis en modo simulación | ✅ **hecho** | `guia_presentacion.md` §3 |
-| Kit de Wireshark (script + plantilla de análisis + instrucciones de VM) | ✅ **hecho** | `Wireshark/` |
-| Generar el `.pcapng` real dentro de la VM | ⬜ pendiente | `Wireshark/README.md` |
-| Slides de dispositivos y lista de precios en la presentación | ⬜ pendiente | `guia_presentacion.md` §5 |
-| Capturas del manual actualizadas y commits en Git | ⬜ pendiente | [`PACKET_TRACER_CAMBIOS.md`](PACKET_TRACER_CAMBIOS.md) §G |
+| Confirmar el permiso `permit ip any 192.168.48.48 0.0.0.3` en las 3 ACLs (ping al servidor desde los 5 departamentos) | En PT | [`PACKET_TRACER_CAMBIOS.md`](PACKET_TRACER_CAMBIOS.md) §E.4 |
+| Confirmar el *Start IP* de `Pool Ventas` (`.4`) y `Pool Factura` (`.68`) | En PT | §B.3 |
+| Borrar el `FAC_IN` sobrante de `T1R5` | En PT | §E.4 |
+| Verificar la convergencia final: BGP, OSPF, EIGRP, HSRP y LACP | En PT | §F |
+| **Generar el `captura_wireshark_202300848.pcapng` dentro de la VM** | Fuera de PT | [`Wireshark/README.md`](Wireshark/README.md) |
+| Completar los valores reales en el análisis de Wireshark | Fuera de PT | [`Wireshark/ANALISIS_WIRESHARK.md`](Wireshark/ANALISIS_WIRESHARK.md) |
+| Slides de **dispositivos** y **lista de precios** en la presentación + renombrar ISPs | Fuera de PT | [`guia_presentacion.md`](guia_presentacion.md) §5 |
+| Recapturar las imágenes del manual (muestran etiquetas y direcciones viejas) | En PT | §G |
+| **Commit + push en Git** y entrega del enlace en UEDI | Fuera de PT | §G |
 
-> Recuerda: los cambios en el `.pkt` **no se pueden automatizar** (el archivo está cifrado); hay que
-> aplicarlos a mano en la GUI de Packet Tracer siguiendo `PACKET_TRACER_CAMBIOS.md`.
+> Recuerda: los cambios en el `.pkt` **no se pueden automatizar** (el archivo está cifrado); se aplican
+> a mano en la GUI de Packet Tracer siguiendo `PACKET_TRACER_CAMBIOS.md`.
+>
+> **Fecha límite: 23/10/2026 · Calificación: 24/10/2026.**
 
 ---
 

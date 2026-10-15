@@ -7,6 +7,23 @@
 > pantalla del resultado. Se recomienda la herramienta **Add Simple PDU** de Packet Tracer para
 > dejar la tabla de resultados visible, más una captura del `Command Prompt` para el ping.
 
+> ⚠️ **Correcciones aplicadas el 14/10/2026 que afectan esta matriz** (ver [`README.md`](README.md) §2):
+> la IP del servidor pasó de `172.16.18.130` a **`192.168.48.50`** en las 4 ACLs, se agregó el permiso
+> de **HTTPS (443)**, y en `VENTAS_IN` la subred de Atención al Cliente se corrigió de
+> `172.16.18.64 0.0.0.63` (vieja) a **`172.16.18.128 0.0.0.127`**. Sin esa última corrección,
+> las pruebas **16 y 17 (ATC ↔ Ventas) fallaban**.
+
+## Inventario de ACLs verificadas
+
+| Departamento | Equipo | ACL | Sentido |
+| :--- | :--- | :--- | :--- |
+| Administración | `T1R4` | *(ninguna — por diseño)* | — |
+| Atención al Cliente | `T1R5` | `ATC_IN` | in |
+| Ventas | `RN-R3`, `RN-R4` | `VENTAS_IN` | in |
+| Facturación | `RN-R3`, `RN-R4` | `FAC_IN` | in |
+| Soporte | `CF-R2` | *(ninguna — por diseño)* | — |
+| Seguridad | `CF-R3` | `SEC_OUT` | **out** |
+
 ## 1. Pruebas ICMP departamento → departamento (ping)
 
 Leyenda: ✅ Exitoso · 🚫 Bloqueado

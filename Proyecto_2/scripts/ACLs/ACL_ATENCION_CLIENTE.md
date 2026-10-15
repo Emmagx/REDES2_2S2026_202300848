@@ -1,82 +1,63 @@
-# ACL — Atención al Cliente
+# ACL: `ATC_IN` — Atención al Cliente
 
-> **ISP 1 — FibraNet GT** · Departamento **Atención al Cliente**
-> Equipo: `T1R5` · Interfaz: **`g0/1`** (LAN `172.16.18.128/25`) · Sentido: **`in`**
+> **ISP 1 — FibraNet GT** · Departamento **Atención al Cliente** (`172.16.18.128/25`)
+> Equipo: `T1R5` · Interfaz: **`g0/1`** · Sentido: **`in`**
 
-## Reglas que aplica este ACL
+## Reglas que aplica
 
-| Regla del enunciado (4.2) | Resultado |
+| Regla del enunciado | Resultado |
 | :--- | :--- |
-| Atención al Cliente ↔ Ventas (ICMP, TCP/80) | ✅ Bidireccional, Exitoso |
+| Atención al Cliente ↔ Ventas (ICMP, TCP/80) | ✅ Exitoso |
 | Atención al Cliente → Facturación | 🚫 Bloqueado |
 | Cualquier depto → Seguridad | 🚫 Bloqueado |
 
-## Configuración
+## Configuración corregida
 
 ```text
-ip access-list extended ACL_ATC_IN
-
- ! --- Plano de control y servicios compartidos: NO filtrar ---
+enable
+configure terminal
+no ip access-list extended ATC_IN
+ip access-list extended ATC_IN
  permit ospf any any
- permit eigrp any any
- permit udp any any eq 1985
- permit udp any any eq 67
- permit udp any any eq 68
- permit udp any any eq 53
- permit tcp any any eq 53
- permit tcp any host 192.168.48.50 eq 80
- permit tcp any host 192.168.48.50 eq 443
-
- ! --- Regla: ATC -> Facturacion BLOQUEADO ---
- deny   ip 172.16.18.128 0.0.0.127 172.16.28.64 0.0.0.63
-
- ! --- Regla: ningun departamento INICIA hacia Seguridad ---
- permit icmp 172.16.18.128 0.0.0.127 172.16.32.64 0.0.0.63 echo-reply
- permit tcp  172.16.18.128 0.0.0.127 eq 80  172.16.32.64 0.0.0.63
- permit tcp  172.16.18.128 0.0.0.127 eq 443 172.16.32.64 0.0.0.63
- deny   ip   172.16.18.128 0.0.0.127 172.16.32.64 0.0.0.63
-
- ! --- Regla: ATC <-> Ventas (solo ICMP y TCP/80) ---
- permit icmp 172.16.18.128 0.0.0.127 172.16.28.0 0.0.0.63
- permit tcp  172.16.18.128 0.0.0.127 172.16.28.0 0.0.0.63 eq 80
- permit icmp 172.16.28.0 0.0.0.63 172.16.18.128 0.0.0.127
- permit tcp  172.16.28.0 0.0.0.63 172.16.18.128 0.0.0.127 eq 80
-
- ! --- Excepciones "VIP": Soporte y Administracion hablan con todos ---
- permit icmp 172.16.18.128 0.0.0.127 172.16.32.0 0.0.0.63
- permit tcp  172.16.18.128 0.0.0.127 172.16.32.0 0.0.0.63 eq 80
- permit tcp  172.16.18.128 0.0.0.127 172.16.32.0 0.0.0.63 eq 443
- permit icmp 172.16.32.0 0.0.0.63 172.16.18.128 0.0.0.127
- permit tcp  172.16.32.0 0.0.0.63 172.16.18.128 0.0.0.127 eq 80
- permit tcp  172.16.32.0 0.0.0.63 172.16.18.128 0.0.0.127 eq 443
- permit icmp 172.16.18.128 0.0.0.127 172.16.18.0 0.0.0.127
- permit tcp  172.16.18.128 0.0.0.127 172.16.18.0 0.0.0.127 eq 80
- permit tcp  172.16.18.128 0.0.0.127 172.16.18.0 0.0.0.127 eq 443
- permit icmp 172.16.18.0 0.0.0.127 172.16.18.128 0.0.0.127
- permit tcp  172.16.18.0 0.0.0.127 172.16.18.128 0.0.0.127 eq 80
- permit tcp  172.16.18.0 0.0.0.127 172.16.18.128 0.0.0.127 eq 443
-
- ! --- Deny implicito: deny ip any any ---
+ permit udp any any eq bootpc
+ permit udp any any eq bootps
+ permit ip any 192.168.48.48 0.0.0.3
+ permit tcp any any established
+ permit icmp any any echo-reply
+ permit ip any 172.16.28.0 0.0.0.63
+ permit ip any 172.16.32.0 0.0.0.63
+ permit ip any 172.16.18.0 0.0.0.127
+ deny ip any any
  exit
-```
-
-## Aplicación en la interfaz
-
-```text
 interface g0/1
- ip access-group ACL_ATC_IN in
+ ip access-group ATC_IN in
  exit
+exit
+write memory
 ```
+
+## Línea por línea
+
+| Línea | Qué hace |
+| :--- | :--- |
+| `permit ospf any any` | Mantiene las adyacencias OSPF (protocolo 89) |
+| `bootpc` / `bootps` | Permite el DHCP relayado hacia `172.16.28.130` |
+| `ip any 192.168.48.48 0.0.0.3` | **Servidor DNS/HTTP/HTTPS** completo: DNS, HTTP, HTTPS **e ICMP** (permite el ping al servidor) |
+| `tcp any any established` | Retorno de sesiones iniciadas desde fuera |
+| `icmp any any echo-reply` | Respuestas a los ping que ATC inicia |
+| `ip any 172.16.28.0 0.0.0.63` | ATC ↔ **Ventas** |
+| `ip any 172.16.32.0 0.0.0.63` | ATC ↔ **Soporte** (excepción "habla con todos") |
+| `ip any 172.16.18.0 0.0.0.127` | ATC ↔ **Administración** (wildcard corregido de `0.0.0.63` a `0.0.0.127`) |
+| `deny ip any any` | Explícito; **Facturación (`172.16.28.64/26`) y Seguridad (`172.16.32.64/26`) quedan bloqueados** |
 
 ## Justificación del sentido `in`
 
-Igual que Administración: se filtra en el **origen** sobre la interfaz LAN. El `deny` explícito
-hacia Facturación debe evaluarse **antes** de cualquier `permit` amplio, por eso aparece arriba
-en la lista (las ACL se evalúan de arriba hacia abajo y se detienen en la primera coincidencia).
+Se filtra **en el origen** sobre la interfaz LAN: el paquete se descarta antes de entrar al dominio de
+enrutamiento y antes de consumir ancho de banda WAN.
 
 ## Verificación
 
 ```text
-show ip access-lists ACL_ATC_IN
-show ip interface g0/1 | include access group
+show ip access-lists ATC_IN
+show ip interface g0/1
 ```
