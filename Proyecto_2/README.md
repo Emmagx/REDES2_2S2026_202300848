@@ -2,8 +2,7 @@
 
 **Curso:** Redes de Computadoras 2 · Segundo Semestre 2026
 **Estudiante:** Carné 202300848
-**Enunciado:** `975_Proyecto_2_2S2026.pdf` (versión oficial)
-**Entrega:** 23/10/2026 · **Calificación:** 24/10/2026
+**Entrega:** 23/10/2026
 
 ---
 
@@ -53,13 +52,13 @@ requiere 2 direcciones útiles, se subneteó con máscara **`/30`**:
 
 **2. Redes LAN departamentales**
 
-| ISP | Requisito del enunciado oficial | Máscara elegida | Hosts útiles | ¿Cumple? |
-| :--- | :--- | :--- | :--- | :--- |
-| **FibraNet GT** | *"debe soportar hasta **75 hosts**"* | **`/25`** | `2⁷ − 2 =` **126** | ✅ |
-| **AndinaCom** | *"queda a discreción del estudiante"* | `/26` | `2⁶ − 2 =` 62 | ✅ |
-| **MoonLink** | *"deben soportar hasta **45 hosts**"* | `/26` | `2⁶ − 2 =` 62 | ✅ |
+| ISP | Requisito del enunciado oficial | Máscara elegida | Hosts útiles |
+| :--- | :--- | :--- | :--- |
+| **FibraNet GT** | *"debe soportar hasta **75 hosts**"* | **`/25`** | `2⁷ − 2 =` **126** | 
+| **AndinaCom** | *"queda a discreción del estudiante"* | `/26` | `2⁶ − 2 =` 62 | 
+| **MoonLink** | *"deben soportar hasta **45 hosts**"* | `/26` | `2⁶ − 2 =` 62 |
 
-> ⚠️ **Decisión de diseño clave (FibraNet GT):** el enunciado *original* dejaba el tamaño de las
+> **Decisión de diseño clave (FibraNet GT):** el enunciado *original* dejaba el tamaño de las
 > subredes a discreción, por lo que el diseño inicial usaba `/26` (62 hosts). El enunciado **oficial
 > exige soportar hasta 75 hosts**, y 62 < 75, por lo que **FibraNet GT se rediseñó a `/25`**
 > (126 hosts útiles). Como las dos `/25` consumen la totalidad de `172.16.18.0/24`, los enlaces punto
@@ -124,17 +123,23 @@ Servidor DHCP: `172.16.28.130` (AndinaCom, `RN-R5 g0/1`). Los routers de acceso 
 tienen `ip helper-address 172.16.28.130` en su interfaz LAN, lo que permite dar direccionamiento
 cruzando dominios de enrutamiento.
 
-| Pool | Red | Máscara | Gateway | DNS |
-| :--- | :--- | :--- | :--- | :--- |
-| `POOL-ADMIN-FG` | `172.16.18.0` | `255.255.255.128` | `172.16.18.1` | `192.168.48.50` |
-| `POOL-ATC-FG` | `172.16.18.128` | `255.255.255.128` | `172.16.18.129` | `192.168.48.50` |
-| `POOL-VENTAS-AC` | `172.16.28.0` | `255.255.255.192` | `172.16.28.1` (VIP HSRP) | `192.168.48.50` |
-| `POOL-FACTURACION-AC` | `172.16.28.64` | `255.255.255.192` | `172.16.28.65` (VIP HSRP) | `192.168.48.50` |
-| `POOL-SOPORTE-ML` | `172.16.32.0` | `255.255.255.192` | `172.16.32.1` | `192.168.48.50` |
-| `POOL-SEGURIDAD-ML` | `172.16.32.64` | `255.255.255.192` | `172.16.32.65` | `192.168.48.50` |
+| Pool (nombre en el `.pkt`) | Red | Máscara | Gateway | Start IP | DNS |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `Pool Admin (FG)` | `172.16.18.0` | `255.255.255.128` | `172.16.18.1` | `172.16.18.2` | `192.168.48.50` |
+| `Pool AC (FG)` | `172.16.18.128` | `255.255.255.128` | `172.16.18.129` | `172.16.18.130` | `192.168.48.50` |
+| `Pool Ventas (RN)` | `172.16.28.0` | `255.255.255.192` | `172.16.28.1` (VIP HSRP) | `172.16.28.4` | `192.168.48.50` |
+| `Pool Factura (RN)` | `172.16.28.64` | `255.255.255.192` | `172.16.28.65` (VIP HSRP) | `172.16.28.68` | `192.168.48.50` |
+| `Pool Soporte (CF)` | `172.16.32.0` | `255.255.255.192` | `172.16.32.1` | `172.16.32.2` | `192.168.48.50` |
+| `Pool Seguridad (CF)` | `172.16.32.64` | `255.255.255.192` | `172.16.32.65` | `172.16.32.66` | `192.168.48.50` |
 
-Direcciones excluidas de los pools: `.1` y `.129` de FibraNet GT, `.1` y `.65` de AndinaCom y
-MoonLink (gateways y VIPs de HSRP), y `172.16.28.130` (el propio servidor DHCP).
+> **Ajuste de los *Start IP* de Ventas y Facturación:** originalmente arrancaban en `.2` y `.66`,
+> que son **exactamente** las direcciones de `RN-R3 g0/1` y `g0/2` (la pareja HSRP usa `.2`/`.3` y
+> `.66`/`.67`). El servidor habría repartido direcciones ya ocupadas por routers, provocando un
+> conflicto. Por eso arrancan en `.4` y `.68`.
+
+Direcciones reservadas / excluidas de los pools: los *gateways* y VIP de HSRP (`.1` y `.129` de
+FibraNet GT; `.1` y `.65` de AndinaCom y MoonLink), las interfaces de los routers en cada segmento
+(`.2`/`.3` y `.66`/`.67` en AndinaCom) y `172.16.28.130` (el propio servidor DHCP).
 
 > **Todos los dispositivos finales obtienen su dirección por DHCP** (requisito eliminatorio de la
 > rúbrica 8.1). Los únicos elementos con IP estática son los dos servidores de infraestructura.
@@ -210,6 +215,34 @@ router bgp 300
  exit
 ```
 
+### 4.1 Redistribución bidireccional (la clave de la conectividad extremo a extremo)
+
+BGP solo intercambia rutas entre los **routers de borde**. Para que un PC de un departamento pueda
+alcanzar la red de otro ISP, las rutas aprendidas por BGP deben inyectarse en el protocolo interno
+del ISP, y viceversa. Se configura en **ambas direcciones** en cada switch multicapa:
+
+| ISP | Del protocolo interno hacia BGP | De BGP hacia el protocolo interno |
+| :--- | :--- | :--- |
+| **FibraNet GT** (OSPF) | `redistribute ospf 1 subnets` | `redistribute bgp 100 subnets` |
+| **AndinaCom** (OSPF) | `redistribute ospf 1 subnets` | `redistribute bgp 200 subnets` |
+| **MoonLink** (EIGRP) | `redistribute eigrp 10` | `redistribute bgp 300 metric 10000 100 255 1 1500` |
+
+```text
+! Ejemplo: SW-BGP-ML (MoonLink) — las dos direcciones
+router bgp 300
+ redistribute eigrp 10
+ exit
+router eigrp 10
+ redistribute bgp 300 metric 10000 100 255 1 1500
+ exit
+```
+
+> **El parámetro `subnets` es obligatorio al redistribuir OSPF.** Sin él, Cisco IOS solo
+> redistribuye redes **con clase** (`172.16.0.0/16`) y las subredes `/25` y `/26` **no se anuncian**;
+> el resultado es que los demás ISPs no pueden alcanzar los departamentos y el servidor DHCP no puede
+> responder a las `giaddr`. En **EIGRP** la redistribución exige declarar la **métrica** explícita
+> (ancho de banda, retardo, confiabilidad, carga y MTU).
+
 Scripts completos: [`scripts/BGP/`](scripts/BGP/)
 
 ![BGP](images/image4.png)
@@ -219,9 +252,10 @@ Scripts completos: [`scripts/BGP/`](scripts/BGP/)
 ## 5. Listas de Control de Acceso (ACLs)
 
 Para cumplir con las reglas de comunicación del enunciado se implementaron **ACLs extendidas
-aplicadas en sentido `in` sobre la interfaz LAN de cada departamento** (filtrado en el origen),
-garantizando el paso de los servicios críticos (DHCP, DNS, HTTP y HTTPS) y del plano de control
-(OSPF, EIGRP y HSRP) antes del `deny ip any any` implícito.
+aplicadas en sentido `in` sobre la interfaz LAN de cada departamento** (filtrado en el origen) —con
+**una única excepción**: `SEC_OUT`, que va en sentido **`out`** porque es una ACL de retorno que
+protege la entrada a Seguridad—, garantizando el paso de los servicios críticos (DHCP, DNS, HTTP y
+HTTPS) y del plano de control (OSPF, EIGRP y HSRP) antes del `deny ip any any` implícito.
 
 | ACL | Departamento | Equipo | Interfaz | Sentido |
 | :--- | :--- | :--- | :--- | :--- |
@@ -237,9 +271,54 @@ garantizando el paso de los servicios críticos (DHCP, DNS, HTTP y HTTPS) y del 
 > restricción "nadie entra a Seguridad" se resuelve en el destino con `SEC_OUT` (sentido `out`), que
 > solo permite tráfico de retorno.
 
-- 📄 **Justificación completa de interfaz y sentido (requisito 4.2):** [`scripts/ACLs/README.md`](scripts/ACLs/README.md)
-- 📄 **Configuración de cada ACL:** [`scripts/ACLs/`](scripts/ACLs/)
-- 📄 **Matriz de pruebas (24 pruebas ICMP + servicios):** [`scripts/ACLs/MATRIZ_PRUEBAS.md`](scripts/ACLs/MATRIZ_PRUEBAS.md)
+### 5.1 Bloque común de las ACLs
+
+Todas las ACLs de departamento incluyen, **antes del `deny ip any any`**, los permisos del plano de
+control y de los servicios centrales. Sin ellos la red colapsa (véase el split-brain del §7.6):
+
+```text
+ip access-list extended ATC_IN
+ ! --- Plano de control y servicios compartidos: NO filtrar ---
+ permit ospf any any
+ permit udp any any eq 1985              ! HSRP (grupos 10 y 20 de AndinaCom)
+ permit udp any any eq bootpc
+ permit udp any any eq bootps
+ permit ip any 192.168.48.48 0.0.0.3     ! Servidor DNS/HTTP/HTTPS completo (192.168.48.50)
+ ! --- Reglas de negocio del departamento ---
+ permit tcp any any established
+ permit icmp any any echo-reply
+ permit ip any 172.16.28.0 0.0.0.63      ! ATC <-> Ventas
+ permit ip any 172.16.32.0 0.0.0.63      ! ATC <-> Soporte
+ permit ip any 172.16.18.0 0.0.0.127     ! ATC <-> Administracion
+ deny   ip any any
+ exit
+interface g0/1
+ ip access-group ATC_IN in
+ exit
+```
+
+> **Nota sobre el permiso al servidor:** se autoriza el **segmento completo** del servidor
+> (`192.168.48.48/30`), no solo el host, porque es un recurso compartido por toda la topología y así
+> cubre DNS (UDP 53), HTTP (TCP 80), HTTPS (TCP 443) **e ICMP** (permite hacer ping al servidor, que
+> es la evidencia usada en las pruebas).
+
+- **Justificación completa de interfaz y sentido (requisito 4.2):** [`scripts/ACLs/README.md`](scripts/ACLs/README.md)
+- **Configuración completa de cada ACL (línea por línea):** [`scripts/ACLs/`](scripts/ACLs/)
+- **Matriz de pruebas (24 pruebas ICMP + servicios):** [`scripts/ACLs/MATRIZ_PRUEBAS.md`](scripts/ACLs/MATRIZ_PRUEBAS.md)
+
+### 5.2 Reglas del enunciado y su cumplimiento
+
+| Origen | Destino | Protocolo permitido | Resultado esperado | Implementado en |
+| :--- | :--- | :--- | :--- | :--- |
+| Seguridad | Cualquier depto | ICMP, TCP/80, TCP/443 | Exitoso | `SEC_OUT` permite solo el retorno; el origen no se filtra |
+| Cualquier depto | Seguridad | — | Bloqueado | `SEC_OUT` (`out` en `CF-R3 g0/1`) |
+| Soporte | Cualquier depto | ICMP, TCP/80, TCP/443 | Exitoso (salvo Seguridad) | sin ACL + `SEC_OUT` bloquea el ingreso |
+| Administración | Cualquier depto | ICMP, TCP/80, TCP/443 | Exitoso (salvo Seguridad) | sin ACL + `SEC_OUT` bloquea el ingreso |
+| Atención al Cliente ↔ Ventas | — | ICMP, TCP/80 | Exitoso | `ATC_IN` + `VENTAS_IN` |
+| Atención al Cliente | Facturación | — | Bloqueado | `ATC_IN` no permite `172.16.28.64/26` |
+| Facturación | Ventas | ICMP, TCP/80 | Exitoso | `VENTAS_IN` + `FAC_IN` |
+| Facturación | Atención al Cliente | — | Bloqueado | `FAC_IN` no permite `172.16.18.128/25` |
+| Ventas | Facturación y Atención al Cliente | ICMP, TCP/80 | Exitoso | `VENTAS_IN` |
 
 ### Evidencia de verificación (ping / PDU)
 
@@ -272,24 +351,39 @@ eliminatorio de la rúbrica 8.1 (el archivo `.pcapng` debe existir y abrir corre
 
 | Elemento | Ubicación |
 | :--- | :--- |
-| Archivo de captura | [`Wireshark/captura_wireshark_202300848.pcapng`](Wireshark/) |
+| Archivo de captura | `Wireshark/captura_wireshark_202300848.pcapng` (238 paquetes · 25,86 s · 166 kB) |
+| Análisis capa por capa (con valores reales) | [`Wireshark/ANALISIS_WIRESHARK.md`](Wireshark/ANALISIS_WIRESHARK.md) |
+| Capturas de pantalla | [`Wireshark/images/`](Wireshark/images/) (8 imágenes) |
+| Instructivo completo de VirtualBox (paso a paso) | [`Wireshark/INSTRUCTIVO_VIRTUALBOX.md`](Wireshark/INSTRUCTIVO_VIRTUALBOX.md) |
 | Script generador de tráfico | [`Wireshark/generar_trafico.sh`](Wireshark/generar_trafico.sh) |
-| Procedimiento y análisis capa por capa | [`Wireshark/ANALISIS_WIRESHARK.md`](Wireshark/ANALISIS_WIRESHARK.md) |
 
-**Entorno de captura:** máquina virtual (VirtualBox / VMware) con Ubuntu Desktop o Kali Linux,
-configurada en modo **NAT o red interna** para garantizar que el tráfico capturado provenga
-únicamente de la VM y no del equipo anfitrión.
+**Entorno de captura (requisito 4.5):** **Oracle VirtualBox** sobre Windows, con **Kali Linux 2026.1**
+como sistema invitado y el adaptador de red en modo **NAT** (`Intel PRO/1000 MT Desktop (NAT)`), lo que
+garantiza que el tráfico capturado provenga únicamente de la VM y no del equipo anfitrión.
+IP de la VM: `10.0.4.15`.
+
+![Máquina virtual en VirtualBox con el adaptador en modo NAT](Wireshark/images/01_virtualbox_vm_kali_red_nat.png)
 
 **Los cuatro escenarios capturados:**
 
-| # | Escenario | Tráfico generado | Elementos identificados |
-| :-: | :--- | :--- | :--- |
-| 1 | Three-way handshake TCP | `curl http://example.com` / `telnet` | Flags `SYN`, `SYN-ACK`, `ACK` y números de secuencia |
-| 2 | Resolución DNS | `nslookup` / `dig` contra `8.8.8.8` o `1.1.1.1` | Tipo de registro, TTL y puerto UDP 53 |
-| 3 | HTTP vs HTTPS | Petición HTTP y petición HTTPS al mismo sitio | Handshake TLS y por qué el contenido va cifrado |
-| 4 | ICMP | `ping` a una dirección externa | Pares `Echo Request` / `Echo Reply` |
+| # | Escenario | Tráfico generado | Elementos identificados | Paquetes |
+| :-: | :--- | :--- | :--- | :-: |
+| 1 | Three-way handshake TCP | `curl -v http://example.com` | Flags `SYN`, `SYN-ACK`, `ACK`, números de secuencia (`X`, `X+1`, `Y`, `Y+1`) y ventana | 5 SYN |
+| 2 | Resolución DNS | `dig @8.8.8.8` y `dig @1.1.1.1` | Tipos `A`, `AAAA` y `MX`; TTL 300/110/63; **UDP 53** | 26 |
+| 3 | HTTP vs HTTPS | `curl http` y `curl https` | HTTP en texto plano (`GET /`, `200 OK`) vs **TLS 1.3** (`TLS_AES_128_GCM_SHA256`) con `Application Data` cifrado | 6 + 34 |
+| 4 | ICMP | `ping -c 4 8.8.8.8` y `1.1.1.1` | Pares `Echo Request` (tipo 8) / `Echo Reply` (tipo 0), TTL 64→113, RTT 32–254 ms | 16 |
 
-📄 **El análisis capa por capa de los cuatro protocolos está desarrollado en
+| | |
+| :--- | :--- |
+| ![Escenario 1: handshake TCP](Wireshark/images/03_escenario1_tcp_handshake.png) | ![Escenario 2: DNS](Wireshark/images/04_escenario2_dns.png) |
+| **Escenario 1** — `tcp.flags.syn == 1` | **Escenario 2** — `dns` |
+| ![Escenario 3a: HTTP](Wireshark/images/05_escenario3_http_texto_plano.png) | ![Escenario 3b: TLS](Wireshark/images/06_escenario3_https_tls.png) |
+| **Escenario 3a** — `http.request` (texto plano) | **Escenario 3b** — `tls.handshake` (cifrado) |
+| ![Escenario 4: ICMP](Wireshark/images/07_escenario4_icmp.png) | ![Resumen](Wireshark/images/08_resumen_cuatro_escenarios.png) |
+| **Escenario 4** — `icmp` | **Resumen** — los 4 escenarios juntos |
+
+**El análisis capa por capa de los cinco protocolos (TCP, DNS, HTTP, TLS e ICMP), con los valores
+reales extraídos de la captura, está en
 [`Wireshark/ANALISIS_WIRESHARK.md`](Wireshark/ANALISIS_WIRESHARK.md).**
 
 ---
@@ -394,17 +488,47 @@ dominio de las tecnologías empleadas.
   aislada del departamento de Seguridad. La justificación quedó documentada en
   [`scripts/ACLs/ACL_SOPORTE.md`](scripts/ACLs/ACL_SOPORTE.md).
 
+### 7.9 ACLs apuntando al servidor con la dirección antigua
+
+- **Problema:** Al acceder a `www.proyecto2_202300848.com`, la página **no cargaba desde ningún
+  departamento**, aunque el **ping al servidor sí funcionaba** desde todos.
+- **Causa Raíz:** Al re-subnetear FibraNet GT a `/25` (§2.1), el servidor DNS/HTTP/HTTPS se movió de
+  `172.16.18.130` a **`192.168.48.50`**, pero las ACLs (`ATC_IN`, `VENTAS_IN`, `FAC_IN` y `SEC_OUT`)
+  seguían autorizando únicamente la **IP antigua**. Como terminan en `deny ip any any`, el **DNS
+  (UDP 53)** y el **HTTP/HTTPS (TCP 80/443)** hacia el servidor nuevo quedaban bloqueados. El ICMP sí
+  pasaba porque las reglas de ping entre departamentos son más amplias — de ahí el síntoma engañoso
+  de "hay ping pero no hay página".
+- **Solución:** Se sustituyeron los permisos por host por un único permiso al segmento del servidor
+  (`permit ip any 192.168.48.48 0.0.0.3`), que cubre DNS, HTTP, HTTPS e ICMP. Se verificó con los
+  contadores de coincidencias (`41 match(es)` en la línea de HTTP) y con el navegador desde una PC de
+  cada departamento.
+
+### 7.10 Enlace OSPF asimétrico y estado atascado del simulador
+
+- **Problema:** `T1R3` no aparecía como vecino de ningún router y todo el subárbol
+  {`T1R3`, `T1R5` y el servidor} quedó aislado: los PDU desde y hacia esos equipos fallaban, y en una
+  PC de Administración el ping al servidor devolvía
+  `Reply from 172.16.18.1: Destination host unreachable`.
+- **Diagnóstico:** Ese mensaje **no lo genera el destino, sino el gateway del PC** (`T1R4`): significa
+  que T1R4 **no tenía ruta** hacia `192.168.48.50`, es decir, un problema de **enrutamiento**, no de
+  ACL ni del servidor. Se confirmó con `show ip ospf interface g0/2` en `T1R3` y en `T1R1`:
+  **T1R3 decía tener 1 vecino adyacente (`192.168.48.34`) mientras T1R1 mostraba `Neighbor Count is 0`**
+  sobre el mismo cable, y **ambos se declaraban DR** del mismo segmento — imposible si se escucharan
+  mutuamente. El CDP lo confirmaba: T1R3 oía a T1R1, pero T1R1 no oía a T1R3.
+- **Causa Raíz:** El enlace quedó en un estado **asimétrico** y el proceso OSPF con estado obsoleto
+  tras renumerar las interfaces con el protocolo en ejecución. Una adyacencia OSPF exige tráfico en
+  **ambos** sentidos, por lo que T1R1 nunca podía completarla.
+- **Solución:** Se guardó el archivo y se **reinició Packet Tracer por completo** (los estados
+  atascados de OSPF y CDP se limpian al recargar el proyecto), y se verificó el árbol con
+  `show ip ospf neighbor` en los cinco routers de FibraNet GT. Complementariamente se recomendó fijar
+  **router-ids explícitos** (`1.1.1.1` … `1.1.1.5`) para evitar que el router-id auto-electo conserve
+  una dirección antigua tras renumerar, y usar `ip ospf network point-to-point` en los enlaces `/30`
+  para eliminar la elección DR/BDR.
+
+> **Diagnóstico reutilizable:** las imágenes del manual deben recapturarse tras estos cambios; la
+> lista está en el §10.
+
 ---
-
-## 8. Entregables
-
-| Entregable | Ubicación | Estado |
-| :--- | :--- | :--- |
-| Enlace al repositorio | UEDI (antes de la fecha límite) | ⬜ |
-| Archivo de simulación | `Proyecto2_202300848.pkt` | ✅ |
-| Manual técnico | Este `README.md` | ✅ |
-| Captura de tráfico | `Wireshark/captura_wireshark_202300848.pcapng` | ⬜ |
-| Presentación ejecutiva | `Proyecto2_Presentacion_202300848.pdf` | ✅ |
 
 ## 9. Documentos de apoyo del repositorio
 
@@ -417,3 +541,70 @@ dominio de las tecnologías empleadas.
 | [`guia_presentacion.md`](guia_presentacion.md) | Guion de la exposición y respuestas a preguntas del evaluador |
 | [`COMPARACION_RC2_vs_OFICIAL_975.md`](COMPARACION_RC2_vs_OFICIAL_975.md) | Comparación de los dos enunciados (documento de trabajo interno) |
 | [`PACKET_TRACER_CAMBIOS.md`](PACKET_TRACER_CAMBIOS.md) | Paso a paso para aplicar los cambios en el archivo `.pkt` |
+
+---
+
+## 10. Evidencia gráfica: qué falta recapturar
+
+Las imágenes de este manual **se tomaron antes del renombrado de los ISPs y del rediseño a `/25`**,
+por lo que muestran etiquetas y direcciones que ya no existen ("Telecom uno", "Redes Nacionales",
+"Link Global", "SERVER DNS HTTP" y subredes `/26`). Hay que reemplazarlas antes de la entrega.
+
+### 10.1 Access List configurado (show access-list)
+```
+enable
+show acces list
+```
+
+**T1-R5**
+![T1-R5](images/image11.png)
+**RN-R3**
+![RN-R3](images/image12.png)
+**RN-R4**
+![RN-R4](images/image13.png)
+**CF-R3**
+![CF-R3](images/image14.png)
+
+### 10.2 Acceso HTTPS, DNS, HTTP
+![alt text](images/image15.png)
+
+### 10.3 HSRP conmutando RN-R3/R4 
+```
+enable
+show standby brief
+```
+
+![alt text](images/image16.png)
+![alt text](images/image17.png)
+
+### 10.4 Vecinos BGP establecido
+```
+enable
+show ip bgp summary
+show ip ospf neighbor
+show ip eigrp neighbors
+```
+
+**FibraNet GT**
+![alt text](images/image18.png)
+
+**AndinaCom**
+![alt text](images/image19.png)
+
+**Moon Link**
+![alt text](images/image20.png)
+### 10.5 Configuracion de Etherchannel
+
+```
+show etherchannel summary
+```
+
+![alt text](images/image21.png)
+
+### 10.6 Evidencias del DHCP
+**PC-Ventas1**
+![alt text](images/image22.png)
+
+### Wireshark Captura: 
+
+![wireshark](Wireshark/images/08_resumen_cuatro_escenarios.png)

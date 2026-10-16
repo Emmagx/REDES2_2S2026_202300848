@@ -33,8 +33,11 @@ interface gig1/0/1
 ! EIGRP para conocer las rutas internas de MoonLink
 ! no auto-summary es OBLIGATORIO: sin el, EIGRP anuncia 172.16.0.0/16
 ! y choca con las redes de los otros ISPs propagadas por BGP.
+! La redistribucion de BGP hacia EIGRP exige declarar la METRICA explicita
+! (ancho de banda, retardo, confiabilidad, carga y MTU).
 router eigrp 10
  no auto-summary
+ redistribute bgp 300 metric 10000 100 255 1 1500
  network 172.16.32.252 0.0.0.3
  exit
 

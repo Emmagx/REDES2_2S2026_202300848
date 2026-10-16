@@ -31,7 +31,10 @@ interface gig1/0/1
  exit
 
 ! OSPF para conocer las rutas internas de AndinaCom
+! + redistribucion de BGP hacia OSPF: es la que permite que RN-R5 (el router del
+!   servidor DHCP) tenga ruta de vuelta hacia las giaddr de los demas ISPs.
 router ospf 1
+ redistribute bgp 200 subnets
  network 172.16.28.252 0.0.0.3 area 0
  exit
 
@@ -40,7 +43,7 @@ router bgp 200
  bgp router-id 2.2.2.2
  neighbor 192.168.48.1 remote-as 100
  neighbor 192.168.48.6 remote-as 300
- redistribute ospf 1
+ redistribute ospf 1 subnets
  exit
 ```
 

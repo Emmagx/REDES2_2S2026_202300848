@@ -32,7 +32,11 @@ interface gig1/0/1
  exit
 
 ! OSPF para conocer las rutas internas de FibraNet GT
+! + redistribucion de BGP hacia OSPF: SIN ESTO los routers internos (T1R2..T1R5)
+!   no conocen las redes de AndinaCom ni MoonLink, y el servidor DHCP no puede
+!   responder a las giaddr de los departamentos.
 router ospf 1
+ redistribute bgp 100 subnets
  network 192.168.48.32 0.0.0.3 area 0
  exit
 
@@ -41,7 +45,7 @@ router bgp 100
  bgp router-id 1.1.1.1
  neighbor 192.168.48.2 remote-as 200
  neighbor 192.168.48.10 remote-as 300
- redistribute ospf 1
+ redistribute ospf 1 subnets
  exit
 ```
 
