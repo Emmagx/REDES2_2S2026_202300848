@@ -62,7 +62,7 @@ troubleshooting §7.6 del README):
 | `permit tcp any any established` | Tráfico de retorno de sesiones TCP iniciadas desde fuera |
 | `permit icmp any any echo-reply` | Respuestas a los ping que el departamento inicia |
 
-> ⚠️ **Corrección aplicada el 14/10/2026:** originalmente estas ACLs apuntaban a `172.16.18.130`,
+> **Corrección aplicada el 14/10/2026:** originalmente estas ACLs apuntaban a `172.16.18.130`,
 > que era la IP del servidor **antes** de moverlo a `192.168.48.50` al re-subnetear FibraNet GT a
 > `/25`. Como consecuencia, DNS y HTTP quedaban bloqueados en cuatro departamentos. También se
 > agregó el permiso de **HTTPS (443)**, que no existía en ninguna ACL.
@@ -73,15 +73,15 @@ troubleshooting §7.6 del README):
 
 | Origen | Destino | Protocolo permitido | Resultado esperado | Implementado en |
 | :--- | :--- | :--- | :--- | :--- |
-| Seguridad | Cualquier depto | ICMP, TCP/80, TCP/443 | ✅ Exitoso | `SEC_OUT` permite solo el retorno; el origen no se filtra |
-| Cualquier depto | Seguridad | — | 🚫 Bloqueado | `SEC_OUT` (out en `CF-R3 g0/1`) |
-| Soporte | Cualquier depto | ICMP, TCP/80, TCP/443 | ✅ Exitoso (salvo Seguridad) | sin ACL + `SEC_OUT` bloquea el ingreso |
-| Administración | Cualquier depto | ICMP, TCP/80, TCP/443 | ✅ Exitoso (salvo Seguridad) | sin ACL + `SEC_OUT` bloquea el ingreso |
-| Atención al Cliente ↔ Ventas | — | ICMP, TCP/80 | ✅ Exitoso | `ATC_IN` + `VENTAS_IN` |
-| Atención al Cliente | Facturación | — | 🚫 Bloqueado | `ATC_IN` no permite `172.16.28.64/26` |
-| Facturación | Ventas | ICMP, TCP/80 | ✅ Exitoso | `VENTAS_IN` + `FAC_IN` |
-| Facturación | Atención al Cliente | — | 🚫 Bloqueado | `FAC_IN` no permite `172.16.18.128/25` |
-| Ventas | Facturación y Atención al Cliente | ICMP, TCP/80 | ✅ Exitoso | `VENTAS_IN` |
+| Seguridad | Cualquier depto | ICMP, TCP/80, TCP/443 | Exitoso | `SEC_OUT` permite solo el retorno; el origen no se filtra |
+| Cualquier depto | Seguridad | — | Bloqueado | `SEC_OUT` (out en `CF-R3 g0/1`) |
+| Soporte | Cualquier depto | ICMP, TCP/80, TCP/443 | Exitoso (salvo Seguridad) | sin ACL + `SEC_OUT` bloquea el ingreso |
+| Administración | Cualquier depto | ICMP, TCP/80, TCP/443 | Exitoso (salvo Seguridad) | sin ACL + `SEC_OUT` bloquea el ingreso |
+| Atención al Cliente ↔ Ventas | — | ICMP, TCP/80 | Exitoso | `ATC_IN` + `VENTAS_IN` |
+| Atención al Cliente | Facturación | — | Bloqueado | `ATC_IN` no permite `172.16.28.64/26` |
+| Facturación | Ventas | ICMP, TCP/80 | Exitoso | `VENTAS_IN` + `FAC_IN` |
+| Facturación | Atención al Cliente | — | Bloqueado | `FAC_IN` no permite `172.16.18.128/25` |
+| Ventas | Facturación y Atención al Cliente | ICMP, TCP/80 | Exitoso | `VENTAS_IN` |
 
 ### Nota sobre la verificación con TCP/80 y TCP/443
 

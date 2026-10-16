@@ -10,11 +10,11 @@ rúbrica 1.2 (manual técnico) y 1.3 (14 puntos).
 
 | Archivo | Estado | Descripción |
 | :--- | :--- | :--- |
-| `captura_wireshark_202300848.pcapng` | ✅ **generado y verificado** | Captura con los 4 escenarios — 238 paquetes, 25,86 s, 166 kB |
-| [`ANALISIS_WIRESHARK.md`](ANALISIS_WIRESHARK.md) | ✅ **completo** | Análisis capa por capa de los 4 escenarios, con los valores reales extraídos de la captura |
-| [`images/`](images/) | ✅ | 8 capturas de pantalla (entorno VirtualBox + los 4 escenarios en Wireshark) |
-| [`INSTRUCTIVO_VIRTUALBOX.md`](INSTRUCTIVO_VIRTUALBOX.md) | ✅ listo | **Guía completa paso a paso**: instalar VirtualBox, crear la VM, instalar el invitado, capturar y sacar el archivo al repositorio |
-| [`generar_trafico.sh`](generar_trafico.sh) | ✅ listo | Script que genera el tráfico y captura con `dumpcap` |
+| `captura_wireshark_202300848.pcapng` | **generado y verificado** | Captura con los 4 escenarios — 238 paquetes, 25,86 s, 166 kB |
+| [`ANALISIS_WIRESHARK.md`](ANALISIS_WIRESHARK.md) | **completo** | Análisis capa por capa de los 4 escenarios, con los valores reales extraídos de la captura |
+| [`images/`](images/) | listo | 8 capturas de pantalla (entorno VirtualBox + los 4 escenarios en Wireshark) |
+| [`INSTRUCTIVO_VIRTUALBOX.md`](INSTRUCTIVO_VIRTUALBOX.md) | listo | **Guía completa paso a paso**: instalar VirtualBox, crear la VM, instalar el invitado, capturar y sacar el archivo al repositorio |
+| [`generar_trafico.sh`](generar_trafico.sh) | listo | Script que genera el tráfico y captura con `dumpcap` |
 
 ### Entorno real de la captura
 
@@ -39,7 +39,7 @@ rúbrica 1.2 (manual técnico) y 1.3 (14 puntos).
 | [`07_escenario4_icmp.png`](images/07_escenario4_icmp.png) | Filtro `icmp` |
 | [`08_resumen_cuatro_escenarios.png`](images/08_resumen_cuatro_escenarios.png) | Los cuatro escenarios en una sola vista |
 
-> 🚀 **Si tuvieras que repetir la captura, empieza por [`INSTRUCTIVO_VIRTUALBOX.md`](INSTRUCTIVO_VIRTUALBOX.md).**
+> **Si tuvieras que repetir la captura, empieza por [`INSTRUCTIVO_VIRTUALBOX.md`](INSTRUCTIVO_VIRTUALBOX.md).**
 > El procedimiento resumido de las secciones 2 a 7 de este documento es equivalente, pero el
 > instructivo incluye la instalación del hipervisor, la configuración de red y las soluciones a los
 > problemas más comunes (Hyper-V en Windows, permisos de `dumpcap`, HTTP bloqueado, etc.).
@@ -61,10 +61,10 @@ El enunciado (4.5) y la rúbrica 1.3 son explícitos:
 
 | Herramienta | Estado verificado |
 | :--- | :--- |
-| Wireshark / tshark / dumpcap | ✅ instalados en el anfitrión |
-| VirtualBox | ❌ **no instalado** |
-| VMware Workstation Player | ❌ no instalado |
-| QEMU | ✅ instalado (`qemu-system-x86_64`) |
+| Wireshark / tshark / dumpcap | instalados en el anfitrión |
+| VirtualBox | **no instalado** |
+| VMware Workstation Player | no instalado |
+| QEMU | instalado (`qemu-system-x86_64`) |
 
 ---
 
@@ -88,7 +88,7 @@ sudo pacman -S virtualbox virtualbox-host-modules-arch
 3. **Configuración de red (crítico):** *Configuración → Red → Adaptador 1 → Conectado a:*
    **`NAT`** (recomendado) o **`Red interna`**.
    - Con `NAT`, todo el tráfico de la VM sale a Internet a través del anfitrión pero la captura solo
-     ve tráfico originado por la VM. ✅
+     ve tráfico originado por la VM.
    - **No uses "Adaptador puente"**, porque capturarías el tráfico de toda la red física.
 4. Instala el sistema operativo.
 
