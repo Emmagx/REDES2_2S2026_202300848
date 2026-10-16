@@ -141,9 +141,7 @@ Direcciones reservadas / excluidas de los pools: los *gateways* y VIP de HSRP (`
 FibraNet GT; `.1` y `.65` de AndinaCom y MoonLink), las interfaces de los routers en cada segmento
 (`.2`/`.3` y `.66`/`.67` en AndinaCom) y `172.16.28.130` (el propio servidor DHCP).
 
-> **Todos los dispositivos finales obtienen su dirección por DHCP** (requisito eliminatorio de la
-> rúbrica 8.1). Los únicos elementos con IP estática son los dos servidores de infraestructura.
-
+> **Todos los dispositivos finales obtienen su dirección por DHCP**
 ---
 
 ## 3. Topologías y tecnologías implementadas
@@ -188,6 +186,38 @@ FibraNet GT; `.1` y `.65` de AndinaCom y MoonLink), las interfaces de los router
 - **Scripts:** [`scripts/MoonLink/`](scripts/MoonLink/)
 
 ![MoonLink](images/image3.png)
+
+### 3.4 Evidencia de convergencia y servicios
+
+Capturas tomadas del `.pkt` final, que demuestran el funcionamiento de cada tecnología.
+
+**Redundancia de capa 3 (HSRP) — un router Activo y uno Standby**
+
+| `RN-R3` (activo) | `RN-R4` (standby) |
+| :--- | :--- |
+| ![HSRP en RN-R3](images/image16.png) | ![HSRP en RN-R4](images/image17.png) |
+| Grupos 10 y 20 en estado **Active**, prioridad 110, `P` (preempt) | Grupos 10 y 20 en estado **Standby**, con el Activo remoto `.2` y `.66` |
+
+**Vecinos eBGP en los tres routers de borde (interconexión interdominio)**
+
+| `SW-BGP-FG` — AS 100 | `SW-BGP-AC` — AS 200 | `SW-BGP-ML` — AS 300 |
+| :--- | :--- | :--- |
+| ![BGP FibraNet GT](images/image18.png) | ![BGP AndinaCom](images/image19.png) | ![BGP MoonLink](images/image20.png) |
+| Router-id `1.1.1.1` · vecinos `.2` (AS 200) y `.10` (AS 300) **Up** · OSPF con T1R1 en FULL/DR | Router-id `2.2.2.2` · vecinos `.1` (AS 100) y `.6` (AS 300) **Up** · OSPF con RN-R1 en FULL/BDR | Router-id `3.3.3.3` · vecinos `.5` (AS 200) y `.9` (AS 100) **Up** · vecino EIGRP `172.16.32.254` en UP |
+
+**Agregación de enlaces (LACP) y direccionamiento por DHCP**
+
+| EtherChannel en `T1S2-ADMIN` | DHCP en `PC-Ventas2` |
+| :--- | :--- |
+| ![EtherChannel LACP](images/image21.png) | ![DHCP en Ventas](images/image22.png) |
+| `Po1(SU)` — protocolo **LACP**, puertos `Fa0/1(P)` y `Fa0/2(P)` en uso | IP **172.16.28.5/26** obtenida por **DHCP**, gateway `172.16.28.1` (**VIP de HSRP**) y DNS `192.168.48.50` |
+
+**Servicio web por HTTPS desde AndinaCom**
+
+![HTTPS desde PC-Ventas1](images/image15.png)
+
+*`https://www.proyecto2_202300848.com` resuelto por el DNS de FibraNet GT y servido desde
+`192.168.48.50`, demostrando ruteo extremo a extremo entre ISPs.*
 
 ---
 
@@ -320,7 +350,22 @@ interface g0/1
 | Facturación | Atención al Cliente | — | Bloqueado | `FAC_IN` no permite `172.16.18.128/25` |
 | Ventas | Facturación y Atención al Cliente | ICMP, TCP/80 | Exitoso | `VENTAS_IN` |
 
-### Evidencia de verificación (ping / PDU)
+### 5.3 Configuración de las ACLs en el simulador
+
+Salida real de `show ip access-lists` en cada equipo (evidencia de la rúbrica 2.5):
+
+| Equipo | ACLs visibles | Captura |
+| :--- | :--- | :--- |
+| `T1R5` | `ATC_IN` (con `permit ip any 192.168.48.48 0.0.0.3` al servidor) | ![ACL ATC_IN](images/image11.png) |
+| `RN-R3` | `VENTAS_IN` y `FAC_IN` con contadores de coincidencias activos | ![ACLs en RN-R3](images/image12.png) |
+| `RN-R4` | `VENTAS_IN` y `FAC_IN` (idénticas, replicadas para el failover de HSRP) | ![ACLs en RN-R4](images/image13.png) |
+| `CF-R3` | `SEC_OUT` — 6 líneas, solo tráfico de retorno | ![ACL SEC_OUT](images/image14.png) |
+
+> En la captura de `RN-R3` se observan los contadores de la línea de HSRP (`1094 match(es)` en
+> `permit udp any any eq 1985`) y de OSPF (`1693 match(es)`): son la prueba de que el bloque común del
+> §5.1 está evitando el bloqueo del plano de control descrito en el §7.6.
+
+### 5.4 Evidencia de verificación de las reglas (ping / PDU)
 
 #### Seguridad — origen de las pruebas
 ![Pruebas desde Seguridad](images/image5.png)
@@ -525,8 +570,19 @@ dominio de las tecnologías empleadas.
   una dirección antigua tras renumerar, y usar `ip ospf network point-to-point` en los enlaces `/30`
   para eliminar la elección DR/BDR.
 
-> **Diagnóstico reutilizable:** las imágenes del manual deben recapturarse tras estos cambios; la
-> lista está en el §10.
+> **Diagnóstico reutilizable:** la lista de evidencias gráficas y los pendientes están en el §10.
+
+---
+
+## 8. Entregables
+
+| Entregable | Ubicación |
+| :--- | :--- | 
+| Enlace al repositorio | UEDI (antes del 23/10/2026) |
+| Archivo de simulación | `Proyecto2_202300848.pkt` |
+| Manual técnico | Este `README.md` | 
+| Captura de tráfico | `Wireshark/captura_wireshark_202300848.pcapng` | 
+| Presentación ejecutiva | `Proyecto2_Presentacion_202300848.pdf` | 
 
 ---
 
@@ -538,73 +594,26 @@ dominio de las tecnologías empleadas.
 | [`scripts/ACLs/README.md`](scripts/ACLs/README.md) | Justificación de cada ACL (interfaz y sentido in/out) |
 | [`scripts/ACLs/MATRIZ_PRUEBAS.md`](scripts/ACLs/MATRIZ_PRUEBAS.md) | 24 pruebas ICMP + pruebas de servicios y de redundancia |
 | [`Wireshark/ANALISIS_WIRESHARK.md`](Wireshark/ANALISIS_WIRESHARK.md) | Análisis capa por capa de los 4 escenarios capturados |
-| [`guia_presentacion.md`](guia_presentacion.md) | Guion de la exposición y respuestas a preguntas del evaluador |
-| [`COMPARACION_RC2_vs_OFICIAL_975.md`](COMPARACION_RC2_vs_OFICIAL_975.md) | Comparación de los dos enunciados (documento de trabajo interno) |
 | [`PACKET_TRACER_CAMBIOS.md`](PACKET_TRACER_CAMBIOS.md) | Paso a paso para aplicar los cambios en el archivo `.pkt` |
 
 ---
 
-## 10. Evidencia gráfica: qué falta recapturar
+## 10. Anexo: índice de figuras y pendientes
 
-Las imágenes de este manual **se tomaron antes del renombrado de los ISPs y del rediseño a `/25`**,
-por lo que muestran etiquetas y direcciones que ya no existen ("Telecom uno", "Redes Nacionales",
-"Link Global", "SERVER DNS HTTP" y subredes `/26`). Hay que reemplazarlas antes de la entrega.
+### 10.1 Índice de figuras
 
-### 10.1 Access List configurado (show access-list)
-```
-enable
-show acces list
-```
-
-**T1-R5**
-![T1-R5](images/image11.png)
-**RN-R3**
-![RN-R3](images/image12.png)
-**RN-R4**
-![RN-R4](images/image13.png)
-**CF-R3**
-![CF-R3](images/image14.png)
-
-### 10.2 Acceso HTTPS, DNS, HTTP
-![alt text](images/image15.png)
-
-### 10.3 HSRP conmutando RN-R3/R4 
-```
-enable
-show standby brief
-```
-
-![alt text](images/image16.png)
-![alt text](images/image17.png)
-
-### 10.4 Vecinos BGP establecido
-```
-enable
-show ip bgp summary
-show ip ospf neighbor
-show ip eigrp neighbors
-```
-
-**FibraNet GT**
-![alt text](images/image18.png)
-
-**AndinaCom**
-![alt text](images/image19.png)
-
-**Moon Link**
-![alt text](images/image20.png)
-### 10.5 Configuracion de Etherchannel
-
-```
-show etherchannel summary
-```
-
-![alt text](images/image21.png)
-
-### 10.6 Evidencias del DHCP
-**PC-Ventas1**
-![alt text](images/image22.png)
-
-### Wireshark Captura: 
-
-![wireshark](Wireshark/images/08_resumen_cuatro_escenarios.png)
+| Figura | Contenido |
+| :--- | :--- | 
+| `images/image.png` | Topología completa de los tres ISPs | 
+| `images/image1.png` | FibraNet GT (topología en árbol) | 
+| `images/image2.png` | AndinaCom (modelo jerárquico + HSRP) | 
+| `images/image3.png` | MoonLink (hub-and-spoke + WRT300N) | 
+| `images/image4.png` | `show ip route bgp` — rutas interdominio |
+| `images/image15.png` | Acceso **HTTPS** a `www.proyecto2_202300848.com` desde Ventas | 
+| `images/image16.png` · `image17.png` | **HSRP**: `RN-R3` Active / `RN-R4` Standby | 
+| `images/image18.png` · `image19.png` · `image20.png` | **Vecinos eBGP** en los 3 switches de borde (+ EIGRP en MoonLink) | 
+| `images/image21.png` | **EtherChannel LACP** `Po1(SU)` en `T1S2-ADMIN` | 
+| `images/image22.png` | **DHCP** en `PC-Ventas2` (IP, gateway VIP de HSRP y DNS) | 
+| `images/image11.png` – `image14.png` | `show ip access-lists` en `T1R5`, `RN-R3`, `RN-R4` y `CF-R3` | 
+| `images/image5.png` … `image10.png` | Matrices de PDU: pruebas de ping entre departamentos | 
+| `Wireshark/images/01` … `08` | Entorno VirtualBox/NAT y los 4 escenarios capturados |
